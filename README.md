@@ -6,7 +6,7 @@
 ## Как выложить в интернет (GitHub Pages, бесплатно)
 
 1. Зайди на github.com → **New repository** → имя, например, `boxing-tracker` → **Public** → **Create repository**.
-2. Нажми **uploading an existing file** и перетащи все файлы из этой папки (вместе с папкой `icons`) → **Commit changes**.
+2. Нажми **uploading an existing file** и перетащи все файлы из этой папки (вместе с папками `icons` и `fonts`) → **Commit changes**.
 3. **Settings → Pages** → Source: **Deploy from a branch** → Branch: `main`, папка `/ (root)` → **Save**.
 4. Через 1–2 минуты сайт откроется по адресу `https://ТВОЙ-ЛОГИН.github.io/boxing-tracker/`.
 
@@ -27,4 +27,8 @@ GPS работает только по https — GitHub Pages даёт его с
 
 ## Обновление
 
-Поменял файлы → увеличь версию в `sw.js` (`boxtrack-v1` → `boxtrack-v2`), чтобы телефон подхватил новую версию.
+Поменял файлы → увеличь версию в `sw.js` (например, `boxtrack-v2` → `boxtrack-v3`), чтобы телефон подхватил новую версию.
+
+## Благодарности
+
+Шрифт Oswald — SIL Open Font License. Иконки Phosphor — MIT.
