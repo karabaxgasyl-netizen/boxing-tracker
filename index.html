@@ -1,0 +1,1261 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="color-scheme" content="dark">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<meta name="description" content="Бег с GPS, таймер раундов и привычки для бокса">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Бокс">
+<title>Бокс-трекер</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+:root{
+  --bg:#0f1115;--surface:#181b21;--surface2:#232731;--border:#2f3541;
+  --text:#f2f4f7;--muted:#a9b1bd;--accent:#c92a2f;--accent-hi:#ff6b6f;
+  --green:#34c77b;--green-ink:#05240f;--yellow:#f5b301;--blue:#6cb2ff;
+  --r-sm:8px;--r:12px;--r-lg:16px;--nav-h:64px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;
+  padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 24px)}
+body.modal-open{overflow:hidden}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button:disabled{opacity:.45;cursor:default}
+:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+[hidden]{display:none!important}
+p{margin:0 0 12px}
+.app{max-width:560px;margin:0 auto;padding:0 16px}
+.top{position:sticky;top:0;z-index:10;background:var(--bg);display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) 0 8px}
+.brand{font-size:20px;font-weight:800;display:flex;align-items:center;gap:8px}
+.icon-btn{min-width:44px;min-height:44px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface);display:inline-grid;place-items:center;font-size:20px;padding:0 8px;flex:0 0 auto}
+h3{font-size:17px;line-height:1.3;margin:0 0 12px;font-weight:700}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px;margin-bottom:16px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.center{text-align:center}
+.label{font-size:14px;color:var(--muted);line-height:1.3}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r);margin-bottom:16px}
+.seg button{min-height:44px;border:0;border-radius:var(--r-sm);background:transparent;color:var(--muted);font-weight:650;font-size:15px;padding:0 6px}
+.seg button[aria-pressed="true"]{background:var(--surface2);color:var(--text);box-shadow:inset 0 0 0 1px var(--border)}
+.seg button:disabled{opacity:.35}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--border);background:var(--surface2);font-weight:650;font-size:15px}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn{min-height:52px;padding:0 16px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-weight:700;font-size:17px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;line-height:1.2}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.success{background:var(--green);border-color:var(--green);color:var(--green-ink)}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--accent-hi)}
+.btn.block{width:100%}
+.btn.xl{min-height:64px;font-size:20px;border-radius:var(--r-lg)}
+.row{display:flex;gap:12px}
+.row>*{flex:1 1 0;min-width:0}
+.stack{display:grid;gap:12px}
+.bar{height:10px;border-radius:999px;background:var(--surface2);overflow:hidden}
+.bar>div{height:100%;width:0;background:var(--accent-hi);border-radius:inherit;transition:width .3s}
+.bar.green>div{background:var(--green)}
+
+/* Бег */
+.run-card{padding:16px 16px 20px}
+.gps{width:100%;min-height:44px;display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--border);border-radius:999px;background:var(--surface2);font-size:14px;font-weight:600;padding:6px 14px;text-align:left;line-height:1.3}
+.gps:disabled{opacity:1;cursor:default}
+.dot{width:10px;height:10px;border-radius:50%;flex:0 0 10px;background:#7b8494}
+.dot.good{background:var(--green);box-shadow:0 0 0 4px rgba(52,199,123,.2)}
+.dot.ok,.dot.wait{background:var(--yellow)}
+.dot.bad{background:var(--accent-hi)}
+.dot.wait{animation:blink 1s infinite}
+@keyframes blink{50%{opacity:.3}}
+.dist{display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:20px;font-variant-numeric:tabular-nums}
+#distBig{font-size:76px;font-weight:800;line-height:1;letter-spacing:-.02em}
+.dist .unit{font-size:26px;font-weight:700;color:var(--muted)}
+.km{font-size:18px;margin-top:6px}
+.goal-prog{margin-top:14px}
+.goal-prog .small{margin-top:6px}
+.stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:20px;text-align:center}
+.stats3>div{background:var(--surface2);border-radius:var(--r);padding:10px 4px}
+.stats3 .val{font-size:24px;font-weight:750;font-variant-numeric:tabular-nums;line-height:1.25}
+.lap-info{margin-top:12px}
+.controls{display:grid;gap:12px;margin-bottom:16px}
+.lap-btn{min-height:120px;font-size:30px;font-weight:800;background:var(--green);border-color:var(--green);color:var(--green-ink);border-radius:var(--r-lg)}
+.lap-btn:active{transform:scale(.98)}
+.hint{font-size:14px;color:var(--muted);margin:0 2px 16px}
+.field{display:grid;gap:6px;margin-top:16px}
+.field span{font-size:14px;color:var(--muted)}
+input[type=text],input[type=number],select{min-height:48px;width:100%;padding:0 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:17px}
+input::placeholder{color:#8a93a1}
+.install{display:grid;gap:12px}
+
+/* Раунды */
+.timer{border-radius:var(--r-lg);padding:24px 16px;text-align:center;margin-bottom:16px;border:1px solid var(--border);background:var(--surface);transition:background-color .3s}
+.timer .phase{font-size:20px;font-weight:750}
+.timer .clock{font-size:96px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;letter-spacing:-.02em;margin:8px 0}
+.timer .round-label{font-size:17px;color:var(--muted);margin-bottom:16px}
+.timer .bar{background:rgba(255,255,255,.12)}
+.timer .bar>div{transition:none}
+.phase-prep{background:#3a2f06;border-color:#6b5407}
+.phase-work{background:#5c1215;border-color:#8f1d22}
+.phase-rest{background:#0f3a24;border-color:#1b6340}
+.phase-done{background:#10284a;border-color:#1d4a85}
+.timer:not(.phase-idle) .round-label{color:#e6e9ee}
+.phase-prep .bar>div{background:var(--yellow)}
+.phase-work .bar>div{background:#ff9497}
+.phase-rest .bar>div{background:var(--green)}
+.phase-done .bar>div{background:var(--blue)}
+.controls-row{margin-bottom:16px}
+.stepper{display:grid;grid-template-columns:1fr 52px 76px 52px;align-items:center;gap:8px;margin-top:12px}
+.stepper button{min-height:48px;border-radius:var(--r);border:1px solid var(--border);background:var(--surface2);font-size:24px;font-weight:700;line-height:1}
+.stepper output{text-align:center;font-size:20px;font-weight:750;font-variant-numeric:tabular-nums}
+.legend{display:grid;gap:6px}
+
+/* Привычки */
+.today{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.big2{font-size:28px;font-weight:800;line-height:1.2}
+.today-emoji{font-size:40px;line-height:1}
+.week-nav{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.week-nav .wk{text-align:center;font-weight:700;line-height:1.3}
+.habit{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;margin-bottom:12px}
+.habit-head{display:flex;align-items:center;gap:12px}
+.h-emoji{font-size:28px;width:40px;text-align:center;flex:0 0 40px;line-height:1}
+.h-info{flex:1;min-width:0}
+.h-name{font-weight:700;font-size:17px;line-height:1.3;overflow-wrap:anywhere}
+.h-meta{font-size:14px;color:var(--muted);line-height:1.35}
+.h-check{width:52px;height:52px;flex:0 0 52px;border-radius:50%;border:2px solid #6b7385;background:var(--surface2);font-size:24px;font-weight:800;color:#6b7385;display:grid;place-items:center;padding:0}
+.h-check[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--green-ink)}
+.h-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:12px}
+.cell{min-height:48px;border-radius:var(--r-sm);border:1px solid var(--border);background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 0;font-size:13px;color:var(--muted);line-height:1.15;min-width:0}
+.cell b{font-size:15px;color:var(--text)}
+.cell.is-today{border:2px solid var(--blue)}
+.cell[aria-pressed="true"]{background:var(--green);border-color:var(--green);color:var(--green-ink)}
+.cell[aria-pressed="true"] b{color:var(--green-ink)}
+.cell.is-today[aria-pressed="true"]{border-color:var(--blue)}
+.cell:disabled{opacity:.35}
+
+/* Итоги */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.tile{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px}
+.tile .v{font-size:24px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums;line-height:1.2}
+.goal-row{margin-bottom:14px}
+.goal-row:last-child{margin-bottom:0}
+.goal-top{display:flex;justify-content:space-between;gap:8px;margin-bottom:6px;font-size:15px}
+.chart{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;align-items:end}
+.bcol{display:flex;flex-direction:column;align-items:center;min-width:0}
+.bval{font-size:11px;color:var(--muted);height:16px;white-space:nowrap;line-height:16px}
+.btrack{width:100%;height:110px;display:flex;align-items:flex-end}
+.bfill{width:100%;background:var(--accent-hi);border-radius:4px 4px 0 0}
+.bfill.zero{background:var(--border)}
+.blab{font-size:12px;color:var(--muted);margin-top:4px}
+.blab.today{color:var(--text);font-weight:700}
+.list-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+.list-row:first-child{border-top:0;padding-top:0}
+.list-row .grow{flex:1;min-width:0}
+.rr-ic{font-size:22px;flex:0 0 auto}
+.rec{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+.rec:first-child{border-top:0;padding-top:0}
+.rec b{text-align:right}
+.weight-now{font-size:22px;font-weight:800;margin:14px 0 8px}
+.weight-now span{font-size:15px;font-weight:600}
+
+/* Навигация, окна, уведомления */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:20;background:var(--bg);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.nav-inner{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.nav button{position:relative;min-height:var(--nav-h);border:0;background:transparent;color:var(--muted);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:13px;font-weight:650}
+.nav .ic{font-size:22px;line-height:1}
+.nav button[aria-current="page"]{color:var(--text)}
+.nav button[aria-current="page"]::before{content:"";position:absolute;top:0;left:28%;right:28%;height:3px;border-radius:0 0 3px 3px;background:var(--accent-hi)}
+.nav button.live::after{content:"";position:absolute;top:9px;left:calc(50% + 10px);width:10px;height:10px;border-radius:50%;background:var(--accent-hi);box-shadow:0 0 0 2px var(--bg)}
+.modal{position:fixed;inset:0;z-index:50;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:560px;max-height:92vh;max-height:92dvh;overflow:auto;background:var(--surface);border:1px solid var(--border);border-bottom:0;border-radius:20px 20px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom))}
+.sheet h2{font-size:22px;margin:0 0 14px;line-height:1.25}
+.modal-actions{display:grid;gap:10px;margin-top:16px}
+.modal-actions:empty{display:none}
+.sum-big{font-size:56px;font-weight:800;text-align:center;line-height:1.1;font-variant-numeric:tabular-nums}
+.sum-big small{font-size:22px;color:var(--muted)}
+.sum-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;margin:16px 0 12px}
+.sum-grid>div{background:var(--surface2);border-radius:var(--r);padding:10px 4px}
+.sum-grid b{font-size:18px;font-variant-numeric:tabular-nums}
+.splits{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.splits span{background:var(--surface2);border-radius:999px;padding:4px 10px;font-size:14px}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:60px;border-top:1px solid var(--border)}
+.set-row:first-child{border-top:0}
+.set-row input{width:96px!important;flex:0 0 96px;text-align:center}
+.switch{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:56px;border-top:1px solid var(--border);cursor:pointer}
+.switch input{width:26px;height:26px;accent-color:var(--accent);flex:0 0 auto}
+.toast{position:fixed;left:50%;bottom:calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);transform:translate(-50%,16px);opacity:0;pointer-events:none;background:#f2f4f7;color:#111418;padding:12px 16px;border-radius:var(--r);font-weight:650;font-size:15px;max-width:calc(100% - 32px);width:max-content;transition:opacity .25s,transform .25s;z-index:60;box-shadow:0 8px 24px rgba(0,0,0,.45)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand"><span aria-hidden="true">🥊</span>Бокс-трекер</div>
+    <button type="button" class="icon-btn" id="btnSettings" aria-label="Настройки">⚙️</button>
+  </header>
+
+  <main>
+    <!-- БЕГ -->
+    <section class="tab" id="tab-run" aria-label="Бег">
+      <div class="seg" id="modeSeg" role="group" aria-label="Где бежишь">
+        <button type="button" data-mode="gps" aria-pressed="true">📍 Улица · GPS</button>
+        <button type="button" data-mode="laps" aria-pressed="false">🔁 Зал · круги</button>
+      </div>
+
+      <div class="card run-card">
+        <button type="button" class="gps" id="gpsChip"><span class="dot" id="gpsDot"></span><span id="gpsText">GPS выключен</span></button>
+        <div class="dist"><span id="distBig">0</span><span class="unit">м</span></div>
+        <div class="km center muted" id="distKm">0,00 км</div>
+        <div class="goal-prog" id="goalProg" hidden>
+          <div class="bar"><div id="goalFill"></div></div>
+          <div class="small muted center" id="goalText"></div>
+        </div>
+        <div class="stats3">
+          <div><div class="label">Время</div><div class="val" id="runTime">0:00</div></div>
+          <div><div class="label">Темп /км</div><div class="val" id="runPace">–:––</div></div>
+          <div><div class="label">км/ч</div><div class="val" id="runSpeed">0,0</div></div>
+        </div>
+        <div class="small muted center lap-info" id="lapInfo" hidden></div>
+      </div>
+
+      <div class="controls">
+        <button type="button" class="btn primary xl block" id="btnStart">▶ Старт</button>
+        <button type="button" class="btn lap-btn block" id="btnLap" hidden>+1 круг</button>
+        <div class="row" id="runBtns" hidden>
+          <button type="button" class="btn" id="btnPause">⏸ Пауза</button>
+          <button type="button" class="btn success" id="btnResume" hidden>▶ Дальше</button>
+          <button type="button" class="btn primary" id="btnFinish">■ Финиш</button>
+        </div>
+        <button type="button" class="btn ghost block" id="btnUndoLap" hidden>Отменить последний круг</button>
+      </div>
+
+      <div class="card" id="setupCard">
+        <h3>Цель пробежки</h3>
+        <div class="chips" id="goalChips">
+          <button type="button" class="chip" data-goal="">Без цели</button>
+          <button type="button" class="chip" data-goal="t1200">20 мин</button>
+          <button type="button" class="chip" data-goal="d1000">1 км</button>
+          <button type="button" class="chip" data-goal="d2000">2 км</button>
+          <button type="button" class="chip" data-goal="d3000">3 км</button>
+          <button type="button" class="chip" data-goal="d5000">5 км</button>
+        </div>
+        <div id="lapSetup" hidden>
+          <label class="field"><span>Длина одного круга, м</span><input type="number" inputmode="numeric" id="lapLen" min="10" max="2000" step="5"></label>
+          <p class="small muted" style="margin:8px 0 0">Стадион — 400 м. Зал можно измерить шагами: 1 шаг ≈ 0,7 м.</p>
+        </div>
+      </div>
+
+      <p class="hint" id="runHint"></p>
+
+      <div class="card install" id="installCard" hidden>
+        <div><b>📲 Поставь на главный экран</b><div class="small muted" id="installHow"></div></div>
+        <div class="row"><button type="button" class="btn primary" id="btnInstall" hidden>Установить</button><button type="button" class="btn ghost" id="btnInstallHide">Скрыть</button></div>
+      </div>
+    </section>
+
+    <!-- РАУНДЫ -->
+    <section class="tab" id="tab-rounds" aria-label="Раунды" hidden>
+      <div class="timer phase-idle" id="timerBox">
+        <div class="phase" id="phaseLabel">Готов?</div>
+        <div class="clock" id="clock" role="timer">3:00</div>
+        <div class="round-label" id="roundLabel"></div>
+        <div class="bar"><div id="phaseFill"></div></div>
+      </div>
+      <div class="row controls-row">
+        <button type="button" class="btn primary xl" id="rStart">▶ Старт</button>
+        <button type="button" class="btn xl" id="rReset">Сброс</button>
+      </div>
+      <div class="card" id="rDone" hidden>
+        <h3>Отметить в привычках?</h3>
+        <div class="stack" id="rMarks"></div>
+      </div>
+      <div class="card" id="rSetup">
+        <h3>Настройка</h3>
+        <div class="chips" id="rPresets">
+          <button type="button" class="chip" data-p="3,180,60">3 × 3:00</button>
+          <button type="button" class="chip" data-p="3,120,60">3 × 2:00</button>
+          <button type="button" class="chip" data-p="5,180,60">5 × 3:00</button>
+          <button type="button" class="chip" data-p="6,120,30">6 × 2:00</button>
+        </div>
+        <div class="stepper"><span>Раундов</span><button type="button" data-step="n,-1" aria-label="Меньше раундов">−</button><output id="vN"></output><button type="button" data-step="n,1" aria-label="Больше раундов">+</button></div>
+        <div class="stepper"><span>Раунд</span><button type="button" data-step="work,-30" aria-label="Короче раунд">−</button><output id="vWork"></output><button type="button" data-step="work,30" aria-label="Длиннее раунд">+</button></div>
+        <div class="stepper"><span>Отдых</span><button type="button" data-step="rest,-15" aria-label="Короче отдых">−</button><output id="vRest"></output><button type="button" data-step="rest,15" aria-label="Длиннее отдых">+</button></div>
+      </div>
+      <div class="card small muted legend">
+        <div>🔔 Гонг — начало раунда</div>
+        <div>⚠️ Три коротких — 10 секунд до конца</div>
+        <div>🔔🔔 Двойной — конец раунда, отдых</div>
+        <div>⏳ Перед первым раундом — 10 секунд на подготовку</div>
+      </div>
+    </section>
+
+    <!-- ПРИВЫЧКИ -->
+    <section class="tab" id="tab-habits" aria-label="Привычки" hidden>
+      <div class="card">
+        <div class="today">
+          <div><div class="small muted" id="todayLabel"></div><div class="big2" id="todayCount"></div></div>
+          <div class="today-emoji" id="todayEmoji" aria-hidden="true">💪</div>
+        </div>
+        <div class="bar green"><div id="todayFill"></div></div>
+      </div>
+      <div class="week-nav">
+        <button type="button" class="icon-btn" id="wkPrev" aria-label="Прошлая неделя">‹</button>
+        <div class="wk"><div id="wkLabel"></div><div class="small muted" id="wkSub"></div></div>
+        <button type="button" class="icon-btn" id="wkNext" aria-label="Следующая неделя">›</button>
+      </div>
+      <div id="habitList"></div>
+      <button type="button" class="btn ghost block" id="btnEditHabits">✏️ Изменить привычки</button>
+    </section>
+
+    <!-- ИТОГИ -->
+    <section class="tab" id="tab-stats" aria-label="Итоги" hidden>
+      <div class="seg" id="periodSeg" role="group" aria-label="Период">
+        <button type="button" data-period="week">Неделя</button>
+        <button type="button" data-period="month">Месяц</button>
+        <button type="button" data-period="all">Всё время</button>
+      </div>
+      <div class="tiles" id="tiles"></div>
+      <div class="card"><h3>🎯 Цели этой недели</h3><div id="goals"></div></div>
+      <div class="card"><h3>📈 Бег за 14 дней, км</h3><div class="chart" id="chart"></div><div class="small muted" id="chartSum" style="margin-top:8px"></div></div>
+      <div class="card"><h3>🏆 Рекорды</h3><div id="records"></div></div>
+      <div class="card"><h3>⚖️ Вес</h3>
+        <form class="row" id="weightForm"><input type="text" inputmode="decimal" id="weightIn" placeholder="Вес, кг" aria-label="Вес в килограммах" autocomplete="off"><button type="submit" class="btn primary" style="flex:0 0 auto">Записать</button></form>
+        <div id="weightInfo"></div>
+      </div>
+      <div class="card"><h3>🗂 История пробежек</h3><div id="history"></div></div>
+    </section>
+  </main>
+</div>
+
+<nav class="nav" aria-label="Разделы">
+  <div class="nav-inner">
+    <button type="button" data-tab="run" id="nav-run"><span class="ic" aria-hidden="true">🏃</span>Бег</button>
+    <button type="button" data-tab="rounds" id="nav-rounds"><span class="ic" aria-hidden="true">⏱️</span>Раунды</button>
+    <button type="button" data-tab="habits" id="nav-habits"><span class="ic" aria-hidden="true">✅</span>Привычки</button>
+    <button type="button" data-tab="stats" id="nav-stats"><span class="ic" aria-hidden="true">📊</span>Итоги</button>
+  </div>
+</nav>
+
+<div class="modal" id="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <h2 id="modalTitle"></h2>
+    <div id="modalBody"></div>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+'use strict';
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+
+const KEY = 'boxtrack.v1', AKEY = 'boxtrack.active', HIDE_INSTALL = 'boxtrack.hideInstall';
+const PREP_SEC = 10, MAX_ACC = 35, MIN_STEP = 4, MAX_SPEED = 9, WIN_MS = 12000, WIN_MIN = 10;
+const MONTHS_G = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+const MONTHS_S = ['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];
+const WD = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+const WD_LONG = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+const DEFAULT_HABITS = [
+  {id:'gym', emoji:'🥊', name:'Тренировка в зале', target:3},
+  {id:'run', emoji:'🏃', name:'Бег', target:3},
+  {id:'rope', emoji:'🪢', name:'Скакалка', target:3},
+  {id:'shadow', emoji:'👊', name:'Бой с тенью', target:3},
+  {id:'pushups', emoji:'💪', name:'Отжимания', target:7},
+  {id:'stretch', emoji:'🧘', name:'Растяжка', target:7},
+  {id:'sleep', emoji:'😴', name:'Сон 8+ часов', target:7},
+  {id:'water', emoji:'💧', name:'Вода 2 литра', target:7}
+];
+const DEFAULT_SETTINGS = {weeklyKm:10, weeklyTrainings:3, lapLength:100, voice:true, vibrate:true, mode:'gps', goal:'', rounds:{n:3, work:180, rest:60}};
+
+/* ---------- утилиты ---------- */
+const pad = n => String(n).padStart(2, '0');
+const dkey = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const todayKey = () => dkey(new Date());
+const parseKey = k => { const [y, m, d] = k.split('-').map(Number); return new Date(y, m - 1, d); };
+const dayStart = d => new Date(d.getFullYear(), d.getMonth(), d.getDate());
+const addDays = (d, n) => { const x = dayStart(d); x.setDate(x.getDate() + n); return x; };
+const weekStart = d => { const x = dayStart(d); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; };
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+function plural(n, f) { n = Math.abs(n) % 100; const n1 = n % 10; if (n > 10 && n < 20) return f[2]; if (n1 > 1 && n1 < 5) return f[1]; if (n1 === 1) return f[0]; return f[2]; }
+function fmtDur(ms) { const s = Math.max(0, Math.floor(ms / 1000)), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60; return h ? `${h}:${pad(m)}:${pad(x)}` : `${m}:${pad(x)}`; }
+function fmtHM(ms) { const m = Math.round(ms / 60000), h = Math.floor(m / 60); return h ? `${h} ч ${m % 60} мин` : `${m} мин`; }
+function fmtPace(ms, m) { if (!(m >= 50) || !(ms > 0)) return '–:––'; const s = Math.round(ms / m); if (s > 5999) return '–:––'; return `${Math.floor(s / 60)}:${pad(s % 60)}`; }
+const fmtKm = (m, d = 2) => (m / 1000).toFixed(d).replace('.', ',');
+const fmtM = m => Math.floor(m).toLocaleString('ru-RU');
+const fmtN = x => (Math.round(x * 10) / 10).toLocaleString('ru-RU');
+const fmt1 = x => (Math.round(x * 10) / 10).toFixed(1).replace('.', ',');
+const fmtSec = s => `${Math.floor(s / 60)}:${pad(s % 60)}`;
+const fmtDay = k => { const d = typeof k === 'string' ? parseKey(k) : new Date(k); return `${d.getDate()} ${MONTHS_S[d.getMonth()]}`; };
+const fmtDateTime = ts => { const d = new Date(ts); return `${d.getDate()} ${MONTHS_S[d.getMonth()]}, ${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const fmtLong = d => `${WD_LONG[d.getDay()]}, ${d.getDate()} ${MONTHS_G[d.getMonth()]}`;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+function haversine(a, b) {
+  const R = 6371008.8, r = Math.PI / 180, dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r;
+  const s = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+
+/* ---------- данные ---------- */
+function normalize(d) {
+  d = d && typeof d === 'object' ? d : {};
+  const s = d.settings && typeof d.settings === 'object' ? d.settings : {};
+  return {
+    version: 1,
+    runs: Array.isArray(d.runs) ? d.runs.filter(r => r && typeof r.start === 'number' && typeof r.dist === 'number') : [],
+    habits: Array.isArray(d.habits) ? d.habits.filter(h => h && h.id && h.name).map(h => ({...h, target: clamp(Number(h.target) || 7, 1, 7)})) : DEFAULT_HABITS.map(h => ({...h})),
+    checks: d.checks && typeof d.checks === 'object' && !Array.isArray(d.checks) ? d.checks : {},
+    weights: Array.isArray(d.weights) ? d.weights.filter(w => w && w.date && typeof w.kg === 'number') : [],
+    rounds: Array.isArray(d.rounds) ? d.rounds : [],
+    settings: {...DEFAULT_SETTINGS, ...s, rounds: {...DEFAULT_SETTINGS.rounds, ...(s.rounds || {})}}
+  };
+}
+function load() { try { return normalize(JSON.parse(localStorage.getItem(KEY))); } catch (e) { return normalize(null); } }
+let state = load();
+function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { toast('Не получилось сохранить: память переполнена'); } }
+const ui = {tab: 'run', period: 'week', weekOffset: 0, histLimit: 15};
+
+function isChecked(id, key) { const a = state.checks[key]; return !!a && a.includes(id); }
+function setCheck(id, key, on) {
+  const a = (state.checks[key] || []).filter(x => x !== id);
+  if (on) a.push(id);
+  if (a.length) state.checks[key] = a; else delete state.checks[key];
+}
+function toggleCheck(id, key) { const on = !isChecked(id, key); setCheck(id, key, on); save(); if (on) vib(25); return on; }
+function weekCount(id, ws) { let c = 0; for (let i = 0; i < 7; i++) if (isChecked(id, dkey(addDays(ws, i)))) c++; return c; }
+function dailyStreak(id) {
+  let d = new Date(), n = 0;
+  if (!isChecked(id, dkey(d))) d = addDays(d, -1);
+  while (n < 3650 && isChecked(id, dkey(d))) { n++; d = addDays(d, -1); }
+  return n;
+}
+function weeklyStreak(h) {
+  let ws = weekStart(new Date()), n = 0;
+  if (weekCount(h.id, ws) < h.target) ws = addDays(ws, -7);
+  while (n < 520 && weekCount(h.id, ws) >= h.target) { n++; ws = addDays(ws, -7); }
+  return n;
+}
+
+/* ---------- звук, голос, вибрация ---------- */
+let actx = null;
+function unlockAudio() {
+  try {
+    if (!actx) { const C = window.AudioContext || window.webkitAudioContext; if (C) actx = new C(); }
+    if (actx && actx.state === 'suspended') actx.resume();
+  } catch (e) {}
+}
+function tone(freq, dur, when = 0, type = 'sine', vol = .35) {
+  if (!actx) return;
+  try {
+    const t = actx.currentTime + when, o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + .012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(actx.destination); o.start(t); o.stop(t + dur + .05);
+  } catch (e) {}
+}
+function vib(p) { if (state.settings.vibrate && navigator.vibrate) { try { navigator.vibrate(p); } catch (e) {} } }
+const sfx = {
+  gong() { tone(523, 1.4, 0, 'triangle', .55); tone(784, 1.1, 0, 'sine', .25); tone(1046, .8, 0, 'sine', .12); vib(500); },
+  bell() { tone(880, .45, 0, 'square', .2); tone(880, .45, .55, 'square', .2); vib([250, 120, 250]); },
+  warn() { [0, .2, .4].forEach(w => tone(1500, .07, w, 'square', .26)); vib([60, 80, 60, 80, 60]); },
+  tick() { tone(1000, .1, 0, 'sine', .35); vib(40); },
+  lap() { tone(1250, .09, 0, 'square', .2); vib(70); },
+  km() { tone(880, .18, 0, 'triangle', .45); tone(1175, .3, .2, 'triangle', .45); vib([300, 150, 300]); },
+  done() { [0, .35, .7].forEach(w => tone(784, .45, w, 'triangle', .5)); tone(1046, .9, 1.05, 'triangle', .5); vib([500, 200, 500]); }
+};
+function speak(text) {
+  if (!state.settings.voice || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'ru-RU'; u.rate = 1.05;
+    const v = speechSynthesis.getVoices().find(x => /^ru/i.test(x.lang));
+    if (v) u.voice = v;
+    speechSynthesis.cancel(); speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function speechDur(ms) {
+  const s = Math.round(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), sec = s % 60, out = [];
+  if (h) out.push(`${h} ${plural(h, ['час','часа','часов'])}`);
+  if (m) out.push(`${m} ${plural(m, ['минута','минуты','минут'])}`);
+  if (sec || !out.length) out.push(`${sec} ${plural(sec, ['секунда','секунды','секунд'])}`);
+  return out.join(' ');
+}
+function speechDist(m) {
+  m = Math.floor(m);
+  if (m < 1000) return `${m} ${plural(m, ['метр','метра','метров'])}`;
+  const km = Math.floor(m / 1000), rest = Math.floor(m % 1000 / 10) * 10;
+  return `${km} ${plural(km, ['километр','километра','километров'])}` + (rest ? ` ${rest} ${plural(rest, ['метр','метра','метров'])}` : '');
+}
+
+/* ---------- экран не гаснет ---------- */
+let wakeLock = null;
+async function requestWake() {
+  try {
+    if ('wakeLock' in navigator && !wakeLock && document.visibilityState === 'visible') {
+      wakeLock = await navigator.wakeLock.request('screen');
+      wakeLock.addEventListener('release', () => { wakeLock = null; });
+    }
+  } catch (e) {}
+}
+function needWake() { return run.status !== 'idle' || (rt.phase !== 'idle' && rt.phase !== 'done'); }
+function releaseWakeIfIdle() { if (!needWake() && wakeLock) { const w = wakeLock; wakeLock = null; w.release().catch(() => {}); } }
+
+/* ---------- БЕГ ---------- */
+function freshRun() {
+  return {status: 'idle', mode: state.settings.mode === 'laps' ? 'laps' : 'gps', goal: state.settings.goal || '',
+    startedAt: 0, activeMs: 0, resumedAt: 0, distance: 0, laps: [], lapLen: state.settings.lapLength,
+    last: null, rejects: 0, kmDone: 0, splits: [], goalDone: false, min5: 0};
+}
+const run = freshRun();
+const gps = {watch: null, fix: null, err: null, speed: null};
+let recent = [], smooth = [], hist = [], lastPersist = 0;
+
+const activeMs = () => run.activeMs + (run.status === 'running' ? Date.now() - run.resumedAt : 0);
+function parseGoal(g) { if (!g) return null; const v = Number(g.slice(1)); return g[0] === 't' ? {type: 't', value: v * 1000} : {type: 'd', value: v}; }
+
+function startRun() {
+  unlockAudio();
+  const mode = run.mode, goal = run.goal, now = Date.now();
+  Object.assign(run, freshRun(), {mode, goal, status: 'running', startedAt: now, resumedAt: now, lapLen: state.settings.lapLength});
+  recent = []; smooth = []; hist = [];
+  if (mode === 'gps') startGps();
+  requestWake(); persistActive(true); vib(80); speak('Поехали!');
+  renderRun();
+}
+function pauseRun(silent) {
+  if (run.status !== 'running') return;
+  run.activeMs += Date.now() - run.resumedAt; run.status = 'paused'; run.last = null; smooth = []; hist = [];
+  persistActive(true); if (!silent) speak('Пауза');
+  renderRun();
+}
+function resumeRun() {
+  if (run.status !== 'paused') return;
+  unlockAudio();
+  run.status = 'running'; run.resumedAt = Date.now(); run.last = null; recent = []; smooth = []; hist = [];
+  if (run.mode === 'gps') startGps();
+  requestWake(); persistActive(true); speak('Продолжаем');
+  renderRun();
+}
+function finishRun() { if (run.status === 'running') pauseRun(true); if (run.status === 'paused') showSummary(); }
+function endRun() { stopGps(); Object.assign(run, freshRun()); recent = []; smooth = []; hist = []; clearActive(); releaseWakeIfIdle(); renderRun(); }
+function saveRun() {
+  const rec = {id: uid(), start: run.startedAt, end: Date.now(), dist: Math.round(run.distance), ms: Math.round(run.activeMs), mode: run.mode};
+  if (run.splits.length) rec.splits = run.splits.slice();
+  if (run.mode === 'laps') { rec.laps = run.laps.length; rec.lapLen = run.lapLen; }
+  state.runs.unshift(rec);
+  let marked = false;
+  if (rec.dist >= 500 && state.habits.some(h => h.id === 'run')) { setCheck('run', dkey(new Date(rec.start)), true); marked = true; }
+  save(); endRun();
+  toast(`Сохранено: ${fmtKm(rec.dist)} км за ${fmtDur(rec.ms)}${marked ? ' · «Бег» ✅' : ''}`);
+  renderAll();
+}
+function discardRun() { endRun(); toast('Пробежка удалена'); }
+const shareMsg = (m, ms) => `🥊 Пробежал ${fmtKm(m)} км за ${fmtDur(ms)} (темп ${fmtPace(ms, m)} /км). Бокс-трекер`;
+
+function showSummary() {
+  const ms = run.activeMs, m = run.distance;
+  const splits = run.splits.map((v, i) => v - (i ? run.splits[i - 1] : 0));
+  openModal({
+    title: '🏁 Пробежка готова',
+    body: `<div class="sum-big">${fmtKm(m)} <small>км</small></div>
+      <div class="sum-grid">
+        <div><div class="label">Время</div><b>${fmtDur(ms)}</b></div>
+        <div><div class="label">Темп /км</div><b>${fmtPace(ms, m)}</b></div>
+        <div><div class="label">Метров</div><b>${fmtM(m)}</b></div>
+      </div>
+      ${splits.length ? `<div class="label">По километрам</div><div class="splits">${splits.map((s, i) => `<span>${i + 1} км — ${fmtDur(s)}</span>`).join('')}</div>` : ''}
+      ${m >= 500 && state.habits.some(h => h.id === 'run') ? '<p class="small muted" style="margin:12px 0 0">Привычка «Бег» отметится сама ✅</p>' : ''}`,
+    actions: [
+      {label: '💾 Сохранить', cls: 'primary', onClick: () => { closeModal(); saveRun(); }},
+      {label: '📤 Поделиться', onClick: () => shareText(shareMsg(m, ms))},
+      {label: '▶ Продолжить бег', onClick: () => { closeModal(); resumeRun(); }},
+      {label: 'Удалить пробежку', cls: 'ghost danger', onClick: () => confirmBox('Удалить эту пробежку?', 'Удалить', discardRun, showSummary)}
+    ],
+    dismissible: false
+  });
+}
+
+/* GPS */
+function startGps() {
+  if (gps.watch !== null) return;
+  if (!('geolocation' in navigator)) { gps.err = 'Этот браузер не умеет GPS. Выбери режим «Зал · круги».'; renderGps(); return; }
+  gps.err = null;
+  gps.watch = navigator.geolocation.watchPosition(onPos, onPosErr, {enableHighAccuracy: true, maximumAge: 0, timeout: 30000});
+  renderGps();
+}
+function stopGps() {
+  if (gps.watch !== null) { try { navigator.geolocation.clearWatch(gps.watch); } catch (e) {} }
+  gps.watch = null; gps.fix = null; gps.speed = null;
+  renderGps();
+}
+function onPos(p) {
+  const c = p.coords, now = Date.now();
+  gps.fix = {acc: c.accuracy, at: now}; gps.err = null;
+  gps.speed = (typeof c.speed === 'number' && isFinite(c.speed) && c.speed >= 0) ? c.speed : null;
+  const stale = p.timestamp && Math.abs(now - p.timestamp) < 864e5 && now - p.timestamp > 10000;
+  if (!stale && run.status === 'running' && run.mode === 'gps') {
+    feedPoint({lat: c.latitude, lon: c.longitude, acc: c.accuracy, t: now, spd: gps.speed});
+  }
+  renderGps();
+  if (run.status === 'running') renderRunLive();
+}
+function onPosErr(e) {
+  if (e.code === 1) {
+    gps.err = 'Нет доступа к геопозиции. Разреши его для этого сайта в настройках, потом нажми сюда.';
+    if (gps.watch !== null) { try { navigator.geolocation.clearWatch(gps.watch); } catch (x) {} gps.watch = null; }
+  } else if (e.code === 2) gps.err = 'Не вижу спутники. Выйди на открытое место.';
+  else gps.err = 'GPS долго ищет сигнал…';
+  renderGps();
+}
+/* Фильтр точек: плохая точность, дрожание на месте и «телепорты» не считаются */
+function feedPoint(raw) {
+  if (!(raw.acc <= MAX_ACC)) return 'acc';
+  smooth.push(raw); if (smooth.length > 3) smooth.shift();
+  const n = smooth.length;
+  const pt = {lat: smooth.reduce((s, q) => s + q.lat, 0) / n, lon: smooth.reduce((s, q) => s + q.lon, 0) / n, acc: raw.acc, t: raw.t, spd: raw.spd};
+  hist.push(pt); while (hist.length && pt.t - hist[0].t > WIN_MS) hist.shift();
+  const L = run.last;
+  if (!L) { run.last = pt; return 'anchor'; }
+  const dt = (pt.t - L.t) / 1000;
+  if (dt <= 0) return 'dt';
+  const d = haversine(L, pt), thr = Math.max(MIN_STEP, 0.6 * pt.acc);
+  if (d < thr) return 'jitter';
+  if (pt.spd != null && pt.spd < 0.3 && d < 2 * thr) return 'still';
+  // за последние 12 с почти не сдвинулся — значит стоит, а точки «дрожат»
+  if (hist.length > 1 && pt.t - hist[0].t >= WIN_MS - 1000 && haversine(hist[0], pt) < WIN_MIN) return 'still';
+  if (d / dt > MAX_SPEED) {
+    if (++run.rejects >= 3) { run.last = pt; run.rejects = 0; smooth = [raw]; }
+    return 'fast';
+  }
+  run.rejects = 0; run.distance += d; run.last = pt;
+  recent.push({t: pt.t, d: run.distance});
+  while (recent.length && pt.t - recent[0].t > 20000) recent.shift();
+  afterDistance();
+  return 'ok';
+}
+function afterDistance() {
+  while (Math.floor(run.distance / 1000) > run.kmDone) { run.kmDone++; announceKm(run.kmDone, activeMs()); }
+  checkGoal(); persistActive();
+}
+function announceKm(k, ms) {
+  run.splits.push(ms);
+  const split = ms - (run.splits.length > 1 ? run.splits[run.splits.length - 2] : 0);
+  sfx.km();
+  speak(`${k} ${plural(k, ['километр','километра','километров'])}. Время ${speechDur(ms)}. Этот километр — за ${speechDur(split)}.`);
+  toast(`🏁 ${k} км · ${fmtDur(ms)}`);
+}
+function checkGoal() {
+  if (run.status !== 'running') return;
+  const ms = activeMs(), g = parseGoal(run.goal);
+  if (g && g.type === 't') {
+    const m5 = Math.floor(ms / 300000);
+    if (m5 > run.min5 && ms < g.value) { run.min5 = m5; vib(150); speak(`${m5 * 5} минут. Пробежал ${speechDist(run.distance)}.`); }
+  }
+  if (!g || run.goalDone) return;
+  if ((g.type === 't' ? ms : run.distance) >= g.value) {
+    run.goalDone = true; sfx.done(); speak('Цель выполнена! Молодец!'); toast('🎯 Цель выполнена!'); persistActive(true);
+  }
+}
+function curSpeed() {
+  if (run.status !== 'running') return 0;
+  if (run.mode === 'laps') {
+    const n = run.laps.length; if (!n) return 0;
+    const lapMs = n > 1 ? run.laps[n - 1] - run.laps[n - 2] : run.laps[0];
+    return lapMs > 0 ? run.lapLen / (lapMs / 1000) : 0;
+  }
+  const now = Date.now();
+  if (!gps.fix || now - gps.fix.at > 10000) return 0;
+  if (gps.speed != null) return gps.speed;
+  const win = recent.filter(x => now - x.t <= 15000);
+  if (win.length < 2) return 0;
+  return (win[win.length - 1].d - win[0].d) / Math.max(1, (now - win[0].t) / 1000);
+}
+/* Круги в зале */
+function addLap() {
+  if (run.status !== 'running') return;
+  const ms = activeMs(), n = run.laps.length;
+  if (ms - (n ? run.laps[n - 1] : 0) < 2000) { vib(30); toast('Слишком быстро — двойное нажатие не засчитано'); return; }
+  run.laps.push(ms); run.distance = run.laps.length * run.lapLen;
+  sfx.lap(); afterDistance(); persistActive(true); renderRun();
+}
+function undoLap() {
+  if (!run.laps.length) return;
+  run.laps.pop(); run.distance = run.laps.length * run.lapLen;
+  run.kmDone = Math.floor(run.distance / 1000); run.splits = run.splits.slice(0, run.kmDone);
+  persistActive(true); renderRun(); toast('Круг отменён');
+}
+/* Сохранение незаконченной пробежки (если вкладка перезагрузится) */
+function persistActive(force) {
+  if (run.status === 'idle') return;
+  const now = Date.now();
+  if (!force && now - lastPersist < 3000) return;
+  lastPersist = now;
+  try { localStorage.setItem(AKEY, JSON.stringify({...run, savedAt: now})); } catch (e) {}
+}
+function clearActive() { try { localStorage.removeItem(AKEY); } catch (e) {} }
+function restoreActive() {
+  let a; try { a = JSON.parse(localStorage.getItem(AKEY)); } catch (e) { return; }
+  if (!a || (a.status !== 'running' && a.status !== 'paused')) return;
+  Object.assign(run, freshRun(), a); delete run.savedAt;
+  run.last = null;
+  if (run.status === 'running') {
+    if (a.savedAt && Date.now() - a.savedAt > 10 * 60 * 1000) {
+      run.activeMs += Math.max(0, a.savedAt - run.resumedAt); run.status = 'paused';
+      toast('Нашёл незаконченную пробежку — она на паузе');
+    } else {
+      if (run.mode === 'gps') startGps();
+      requestWake(); toast('Пробежка восстановлена — продолжаем');
+    }
+  } else toast('Есть незаконченная пробежка — она на паузе');
+}
+
+function renderRun() {
+  const idle = run.status === 'idle', running = run.status === 'running', paused = run.status === 'paused', laps = run.mode === 'laps';
+  $$('#modeSeg button').forEach(b => { b.setAttribute('aria-pressed', String(b.dataset.mode === run.mode)); b.disabled = !idle && b.dataset.mode !== run.mode; });
+  $('#btnStart').hidden = !idle;
+  $('#runBtns').hidden = idle;
+  $('#btnPause').hidden = !running;
+  $('#btnResume').hidden = !paused;
+  $('#btnLap').hidden = !(laps && !idle);
+  $('#btnLap').disabled = !running;
+  $('#btnUndoLap').hidden = !(laps && !idle && run.laps.length > 0);
+  $('#setupCard').hidden = !idle;
+  $('#lapSetup').hidden = !laps;
+  if (document.activeElement !== $('#lapLen')) $('#lapLen').value = state.settings.lapLength;
+  $$('#goalChips .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.goal === (run.goal || ''))));
+  $('#gpsChip').hidden = laps;
+  $('#runHint').textContent = laps
+    ? 'Нажимай «+1 круг» каждый раз, когда пробегаешь круг. Метры посчитаются сами: круги × длина круга.'
+    : 'Пока идёт пробежка, экран не гаснет. Не сворачивай приложение и не блокируй телефон — иначе GPS может перестать считать метры.';
+  $('#nav-run').classList.toggle('live', !idle);
+  renderGps(); renderRunLive();
+}
+function renderRunLive() {
+  const ms = activeMs(), m = run.distance;
+  $('#distBig').textContent = fmtM(m);
+  $('#distKm').textContent = `${fmtKm(m)} км`;
+  $('#runTime').textContent = fmtDur(ms);
+  $('#runPace').textContent = fmtPace(ms, m);
+  $('#runSpeed').textContent = (curSpeed() * 3.6).toFixed(1).replace('.', ',');
+  const g = parseGoal(run.goal), show = !!g && run.status !== 'idle';
+  $('#goalProg').hidden = !show;
+  if (show) {
+    const v = g.type === 't' ? ms : m;
+    $('#goalFill').style.width = Math.min(100, v / g.value * 100) + '%';
+    $('#goalText').textContent = run.goalDone ? '🎯 Цель выполнена!'
+      : g.type === 't' ? `Цель ${fmtDur(g.value)} · осталось ${fmtDur(g.value - ms + 999)}`
+      : `Цель ${fmtN(g.value / 1000)} км · осталось ${fmtM(g.value - m)} м`;
+  }
+  const li = $('#lapInfo');
+  if (run.mode === 'laps' && run.status !== 'idle') {
+    const n = run.laps.length;
+    let t = `Кругов: ${n} × ${run.lapLen} м`;
+    if (n) {
+      const times = run.laps.map((v, i) => v - (i ? run.laps[i - 1] : 0));
+      t += ` · последний ${fmtDur(times[n - 1])} · лучший ${fmtDur(Math.min(...times))}`;
+    }
+    li.textContent = t; li.hidden = false;
+  } else li.hidden = true;
+}
+function renderGps() {
+  const dot = $('#gpsDot'), txt = $('#gpsText'), chip = $('#gpsChip');
+  let cls = 'off', t;
+  if (gps.err) { cls = 'bad'; t = gps.err; }
+  else if (gps.watch === null) t = run.status === 'idle' ? 'GPS выключен · нажми для поиска' : 'GPS выключен';
+  else if (!gps.fix) { cls = 'wait'; t = 'Ищу спутники…'; }
+  else if (Date.now() - gps.fix.at > 15000) { cls = 'wait'; t = 'GPS молчит… Не сворачивай приложение'; }
+  else {
+    const a = Math.round(gps.fix.acc);
+    if (a <= 15) { cls = 'good'; t = `Сигнал отличный · ±${a} м`; }
+    else if (a <= MAX_ACC) { cls = 'ok'; t = `Сигнал нормальный · ±${a} м`; }
+    else { cls = 'bad'; t = `Слабый сигнал · ±${a} м. Выйди на открытое место`; }
+  }
+  dot.className = 'dot ' + cls; txt.textContent = t;
+  chip.disabled = !(gps.watch === null || gps.err);
+}
+
+/* ---------- РАУНДЫ ---------- */
+const rt = {phase: 'idle', round: 1, endsAt: 0, left: 0, total: 0, paused: false, cfg: null, lastSec: null};
+const rCfg = () => rt.cfg || state.settings.rounds;
+function rSetPhase(ph, sec) { rt.phase = ph; rt.total = sec * 1000; rt.endsAt = Date.now() + rt.total; rt.left = rt.total; rt.lastSec = null; }
+function rStartPause() {
+  unlockAudio();
+  if (rt.phase === 'idle' || rt.phase === 'done') {
+    rt.cfg = {...state.settings.rounds}; rt.round = 1; rt.paused = false;
+    rSetPhase('prep', PREP_SEC); requestWake(); speak('Приготовься');
+  } else if (rt.paused) { rt.paused = false; rt.endsAt = Date.now() + rt.left; requestWake(); }
+  else { rt.paused = true; rt.left = Math.max(0, rt.endsAt - Date.now()); }
+  renderRounds();
+}
+function rReset() { rt.phase = 'idle'; rt.paused = false; rt.cfg = null; rt.round = 1; releaseWakeIfIdle(); renderRounds(); }
+function rTick() {
+  if (rt.phase === 'idle' || rt.phase === 'done' || rt.paused) return;
+  const left = rt.endsAt - Date.now(), sec = Math.ceil(left / 1000);
+  if (sec !== rt.lastSec) {
+    rt.lastSec = sec;
+    if (rt.phase === 'work' && sec === 10 && rt.total > 15000) sfx.warn();
+    if ((rt.phase === 'prep' || rt.phase === 'rest') && sec >= 1 && sec <= 3) sfx.tick();
+  }
+  if (left <= 0) {
+    const c = rt.cfg;
+    if (rt.phase === 'prep') { rSetPhase('work', c.work); sfx.gong(); }
+    else if (rt.phase === 'work') {
+      if (rt.round >= c.n) {
+        rt.phase = 'done'; sfx.done(); speak('Тренировка окончена. Молодец!');
+        state.rounds.push({at: Date.now(), n: c.n, work: c.work}); save(); releaseWakeIfIdle();
+      } else if (c.rest > 0) { rSetPhase('rest', c.rest); sfx.bell(); }
+      else { rt.round++; rSetPhase('work', c.work); sfx.gong(); }
+    } else if (rt.phase === 'rest') { rt.round++; rSetPhase('work', c.work); sfx.gong(); }
+  }
+  if (ui.tab === 'rounds') renderRounds(); else renderNavLive();
+}
+function renderRounds() {
+  const cfg = rCfg(), active = rt.phase !== 'idle' && rt.phase !== 'done';
+  const rw = n => `${n} ${plural(n, ['раунд','раунда','раундов'])}`;
+  let label, clockMs, sub, frac = 0;
+  if (rt.phase === 'idle') { label = 'Готов?'; clockMs = cfg.work * 1000; sub = `${rw(cfg.n)} по ${fmtSec(cfg.work)} · отдых ${cfg.rest ? fmtSec(cfg.rest) : 'нет'}`; }
+  else if (rt.phase === 'done') { label = 'Готово! 💪'; clockMs = 0; sub = `${rw(cfg.n)} по ${fmtSec(cfg.work)}`; frac = 1; }
+  else {
+    const left = rt.paused ? rt.left : Math.max(0, rt.endsAt - Date.now());
+    clockMs = left; frac = rt.total ? 1 - left / rt.total : 0;
+    label = {prep: 'Приготовься', work: 'Работа 🥊', rest: 'Отдых'}[rt.phase] + (rt.paused ? ' · пауза' : '');
+    sub = rt.phase === 'prep' ? `Раунд 1 из ${cfg.n}` : rt.phase === 'rest' ? `Дальше раунд ${rt.round + 1} из ${cfg.n}` : `Раунд ${rt.round} из ${cfg.n}`;
+  }
+  $('#timerBox').className = 'timer phase-' + rt.phase;
+  $('#phaseLabel').textContent = label;
+  $('#clock').textContent = fmtSec(Math.ceil(clockMs / 1000));
+  $('#roundLabel').textContent = sub;
+  $('#phaseFill').style.width = (clamp(frac, 0, 1) * 100) + '%';
+  const st = $('#rStart');
+  st.textContent = !active ? (rt.phase === 'done' ? '▶ Ещё раз' : '▶ Старт') : rt.paused ? '▶ Дальше' : '⏸ Пауза';
+  st.className = 'btn xl ' + (!active ? 'primary' : rt.paused ? 'success' : '');
+  $('#rReset').disabled = rt.phase === 'idle';
+  $('#rSetup').hidden = active;
+  $('#rDone').hidden = rt.phase !== 'done';
+  if (rt.phase === 'done') renderRoundMarks();
+  const r = state.settings.rounds;
+  $('#vN').textContent = r.n;
+  $('#vWork').textContent = fmtSec(r.work);
+  $('#vRest').textContent = r.rest ? fmtSec(r.rest) : 'нет';
+  $$('#rPresets .chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.p === `${r.n},${r.work},${r.rest}`)));
+  renderNavLive();
+}
+function renderNavLive() { $('#nav-rounds').classList.toggle('live', rt.phase !== 'idle' && rt.phase !== 'done'); }
+function renderRoundMarks() {
+  const tk = todayKey();
+  const items = ['shadow', 'gym'].map(id => state.habits.find(h => h.id === id)).filter(Boolean);
+  $('#rMarks').innerHTML = items.map(h => {
+    const on = isChecked(h.id, tk);
+    return `<button type="button" class="btn block ${on ? 'success' : ''}" data-mark="${esc(h.id)}" aria-pressed="${on}">${on ? '✓' : esc(h.emoji)} ${esc(h.name)}</button>`;
+  }).join('') || '<p class="muted" style="margin:0">Отметь нужную привычку во вкладке «Привычки».</p>';
+}
+
+/* ---------- ПРИВЫЧКИ ---------- */
+const targetText = n => n >= 7 ? 'Каждый день' : `${n} ${plural(n, ['раз','раза','раз'])} в неделю`;
+function habitMeta(h, ws) {
+  const wc = weekCount(h.id, ws);
+  if (h.target >= 7) { const s = dailyStreak(h.id); return `${wc} из 7 на неделе${s ? ` · 🔥 ${s} ${plural(s, ['день','дня','дней'])} подряд` : ''}`; }
+  const s = weeklyStreak(h);
+  return `${wc} из ${h.target} на неделе${wc >= h.target ? ' ✅' : ''}${s ? ` · 🔥 ${s} ${plural(s, ['неделя','недели','недель'])}` : ''}`;
+}
+function renderHabits(refocus) {
+  const now = new Date(), tk = dkey(now), hs = state.habits;
+  const done = hs.filter(h => isChecked(h.id, tk)).length;
+  $('#todayLabel').textContent = 'Сегодня, ' + fmtLong(now);
+  $('#todayCount').textContent = `${done} из ${hs.length}`;
+  $('#todayEmoji').textContent = hs.length && done === hs.length ? '🏆' : done * 2 >= hs.length && done ? '🔥' : '💪';
+  $('#todayFill').style.width = hs.length ? (done / hs.length * 100) + '%' : '0';
+  const ws = addDays(weekStart(now), ui.weekOffset * 7), we = addDays(ws, 6);
+  $('#wkLabel').textContent = ws.getMonth() === we.getMonth()
+    ? `${ws.getDate()}–${we.getDate()} ${MONTHS_G[we.getMonth()]}`
+    : `${ws.getDate()} ${MONTHS_S[ws.getMonth()]} – ${we.getDate()} ${MONTHS_S[we.getMonth()]}`;
+  $('#wkSub').textContent = ui.weekOffset === 0 ? 'Эта неделя' : ui.weekOffset === -1 ? 'Прошлая неделя' : `${-ui.weekOffset} ${plural(-ui.weekOffset, ['неделю','недели','недель'])} назад`;
+  $('#wkNext').disabled = ui.weekOffset >= 0;
+  const today0 = dayStart(now).getTime();
+  $('#habitList').innerHTML = hs.length ? hs.map(h => {
+    const on = isChecked(h.id, tk), id = esc(h.id), name = esc(h.name);
+    const cells = WD.map((w, i) => {
+      const d = addDays(ws, i), k = dkey(d), c = isChecked(h.id, k), fut = d.getTime() > today0, isT = k === tk;
+      return `<button type="button" class="cell${isT ? ' is-today' : ''}" data-id="${id}" data-day="${k}" aria-pressed="${c}" aria-label="${name}: ${w}, ${d.getDate()} ${MONTHS_G[d.getMonth()]}"${fut ? ' disabled' : ''}><span>${w}</span><b>${c ? '✓' : d.getDate()}</b></button>`;
+    }).join('');
+    return `<div class="habit"><div class="habit-head"><span class="h-emoji" aria-hidden="true">${esc(h.emoji)}</span><div class="h-info"><div class="h-name">${name}</div><div class="h-meta">${habitMeta(h, ws)}</div></div><button type="button" class="h-check" data-toggle="${id}" aria-pressed="${on}" aria-label="${name} — сегодня">✓</button></div><div class="h-week">${cells}</div></div>`;
+  }).join('') : '<div class="card muted">Привычек нет. Нажми «Изменить привычки», чтобы добавить.</div>';
+  if (refocus) { const el = $(refocus); if (el) el.focus({preventScroll: true}); }
+}
+function openHabitEditor() {
+  const rows = state.habits.map(h => `<div class="list-row"><span class="h-emoji" aria-hidden="true">${esc(h.emoji)}</span><div class="grow"><b>${esc(h.name)}</b><div class="small muted">${targetText(h.target)}</div></div><button type="button" class="icon-btn" data-delhabit="${esc(h.id)}" aria-label="Удалить «${esc(h.name)}»">🗑</button></div>`).join('')
+    || '<p class="muted">Список пуст — добавь первую привычку.</p>';
+  openModal({
+    title: '✏️ Привычки',
+    body: `<div>${rows}</div>
+      <h3 style="margin-top:20px">Новая привычка</h3>
+      <form id="habitForm" class="stack">
+        <div class="row"><input type="text" id="hEmoji" maxlength="8" value="⭐" aria-label="Эмодзи" style="flex:0 0 64px;text-align:center;font-size:24px;padding:0 4px"><input type="text" id="hName" maxlength="40" placeholder="Например, Пресс 50 раз" aria-label="Название привычки"></div>
+        <select id="hTarget" aria-label="Как часто">${[7, 6, 5, 4, 3, 2, 1].map(n => `<option value="${n}">${targetText(n)}</option>`).join('')}</select>
+        <button class="btn primary block" type="submit">+ Добавить</button>
+      </form>`,
+    actions: [{label: 'Готово', onClick: () => { closeModal(); renderHabits(); }}],
+    onDismiss: () => renderHabits(),
+    onOpen: body => {
+      body.onclick = e => {
+        const b = e.target.closest('[data-delhabit]'); if (!b) return;
+        const h = state.habits.find(x => x.id === b.dataset.delhabit); if (!h) return;
+        confirmBox(`Удалить «${h.name}»?`, 'Удалить', () => { state.habits = state.habits.filter(x => x.id !== h.id); save(); renderHabits(); openHabitEditor(); }, openHabitEditor);
+      };
+      $('#habitForm', body).addEventListener('submit', e => {
+        e.preventDefault();
+        const name = $('#hName').value.trim();
+        if (!name) { toast('Напиши название привычки'); $('#hName').focus(); return; }
+        state.habits.push({id: uid(), emoji: $('#hEmoji').value.trim() || '⭐', name, target: Number($('#hTarget').value) || 7});
+        save(); renderHabits(); toast('Привычка добавлена ✅'); openHabitEditor();
+      });
+    }
+  });
+}
+
+/* ---------- ИТОГИ ---------- */
+function periodRange(p) {
+  const now = new Date();
+  if (p === 'week') { const s = weekStart(now); return [s.getTime(), addDays(s, 7).getTime()]; }
+  if (p === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1).getTime(), new Date(now.getFullYear(), now.getMonth() + 1, 1).getTime()];
+  return [0, Infinity];
+}
+function countChecks(id, a, b) {
+  let c = 0;
+  for (const k in state.checks) { const t = parseKey(k).getTime(); if (t >= a && t < b && state.checks[k].includes(id)) c++; }
+  return c;
+}
+function renderStats() {
+  $$('#periodSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.period === ui.period)));
+  const [a, b] = periodRange(ui.period);
+  const rs = state.runs.filter(r => r.start >= a && r.start < b);
+  const dist = rs.reduce((s, r) => s + r.dist, 0), ms = rs.reduce((s, r) => s + r.ms, 0);
+  const rounds = state.rounds.filter(x => x.at >= a && x.at < b).reduce((s, x) => s + x.n, 0);
+  const tiles = [
+    ['🏃 Дистанция', `${fmtKm(dist, 1)} км`], ['🔢 Пробежек', rs.length],
+    ['⏱ Время бега', fmtHM(ms)], ['⚡ Средний темп', dist >= 50 ? `${fmtPace(ms, dist)} /км` : '—'],
+    ['🥊 Тренировок', countChecks('gym', a, b)], ['👊 Раундов', rounds]
+  ];
+  $('#tiles').innerHTML = tiles.map(([l, v]) => `<div class="tile"><div class="label">${l}</div><div class="v">${v}</div></div>`).join('');
+  renderGoals(); renderChart(); renderRecords(); renderWeight(); renderHistory();
+}
+function renderGoals() {
+  const [a, b] = periodRange('week'), s = state.settings;
+  const km = state.runs.filter(r => r.start >= a && r.start < b).reduce((x, r) => x + r.dist, 0) / 1000;
+  const gym = countChecks('gym', a, b), ws = new Date(a);
+  let need = 0, got = 0;
+  state.habits.forEach(h => { need += h.target; got += Math.min(h.target, weekCount(h.id, ws)); });
+  const pct = need ? Math.round(got / need * 100) : 0;
+  const row = (t, v, f, cls = '') => `<div class="goal-row"><div class="goal-top"><span>${t}</span><b>${v}</b></div><div class="bar ${cls}"><div style="width:${clamp(f, 0, 1) * 100}%"></div></div></div>`;
+  $('#goals').innerHTML = row('🏃 Бег', `${fmtN(km)} из ${fmtN(s.weeklyKm)} км${km >= s.weeklyKm ? ' ✅' : ''}`, km / s.weeklyKm)
+    + row('🥊 Тренировки в зале', `${gym} из ${s.weeklyTrainings}${gym >= s.weeklyTrainings ? ' ✅' : ''}`, gym / s.weeklyTrainings)
+    + row('✅ Все привычки', `${pct}%`, pct / 100, 'green');
+}
+function renderChart() {
+  const today = dayStart(new Date()), days = [];
+  for (let i = 13; i >= 0; i--) { const d = addDays(today, -i); days.push({d, k: dkey(d), m: 0}); }
+  const idx = {}; days.forEach((x, i) => { idx[x.k] = i; });
+  state.runs.forEach(r => { const i = idx[dkey(new Date(r.start))]; if (i !== undefined) days[i].m += r.dist; });
+  const max = Math.max(1000, ...days.map(x => x.m)), total = days.reduce((s, x) => s + x.m, 0);
+  $('#chart').innerHTML = days.map((x, i) => `<div class="bcol" role="img" aria-label="${fmtDay(x.k)}: ${fmtKm(x.m, 1)} км"><div class="bval">${x.m ? (x.m >= 9950 ? Math.round(x.m / 1000) : fmtKm(x.m, 1)) : ''}</div><div class="btrack"><div class="bfill${x.m ? '' : ' zero'}" style="height:${x.m ? Math.max(4, x.m / max * 100) : 2}%"></div></div><div class="blab${i === 13 ? ' today' : ''}">${x.d.getDate()}</div></div>`).join('');
+  $('#chartSum').textContent = total ? `Всего за 14 дней: ${fmtKm(total, 1)} км` : 'Тут появятся столбики, когда начнёшь бегать.';
+}
+function renderRecords() {
+  const rs = state.runs, el = $('#records');
+  if (!rs.length) { el.innerHTML = '<p class="muted" style="margin:0">Пока пусто. Пробеги первую тренировку — и тут появятся рекорды 🏃</p>'; return; }
+  const longest = rs.reduce((a, b) => b.dist > a.dist ? b : a);
+  const paced = rs.filter(r => r.dist >= 1000 && r.ms > 0);
+  const best = paced.length ? paced.reduce((a, b) => b.ms / b.dist < a.ms / a.dist ? b : a) : null;
+  const weeks = {}; rs.forEach(r => { const k = dkey(weekStart(new Date(r.start))); weeks[k] = (weeks[k] || 0) + r.dist; });
+  const bestW = Object.entries(weeks).sort((a, b) => b[1] - a[1])[0];
+  const total = rs.reduce((s, r) => s + r.dist, 0);
+  const row = (t, v) => `<div class="rec"><span>${t}</span><b>${v}</b></div>`;
+  el.innerHTML = row('Самая длинная', `${fmtKm(longest.dist)} км · ${fmtDay(longest.start)}`)
+    + row('Лучший темп (от 1 км)', best ? `${fmtPace(best.ms, best.dist)} /км · ${fmtDay(best.start)}` : 'пробеги 1 км')
+    + row('Лучшая неделя', `${fmtKm(bestW[1], 1)} км · с ${fmtDay(bestW[0])}`)
+    + row('Всего пробежал', `${fmtKm(total, 1)} км`);
+}
+function addWeight(v) {
+  const k = todayKey();
+  state.weights = state.weights.filter(w => w.date !== k);
+  state.weights.push({date: k, kg: v});
+  state.weights.sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  save();
+}
+function renderWeight() {
+  const ws = state.weights, el = $('#weightInfo');
+  if (!ws.length) { el.innerHTML = '<p class="small muted" style="margin:12px 0 0">Записывай вес раз в неделю утром — так видно, как меняется форма и в какой ты весовой категории.</p>'; return; }
+  const last = ws[ws.length - 1], prev = ws[ws.length - 2];
+  let delta = '';
+  if (prev) { const d = Math.round((last.kg - prev.kg) * 10) / 10; delta = ` <span class="muted">${d > 0 ? '+' : d < 0 ? '−' : '±'}${fmt1(Math.abs(d))} кг с ${fmtDay(prev.date)}</span>`; }
+  el.innerHTML = `<div class="weight-now">${fmt1(last.kg)} кг${delta}</div>` + ws.slice(-5).reverse().map(w =>
+    `<div class="list-row"><div class="grow">${fmtDay(w.date)}</div><b>${fmt1(w.kg)} кг</b><button type="button" class="icon-btn" data-delweight="${w.date}" aria-label="Удалить запись за ${fmtDay(w.date)}" style="font-size:26px">×</button></div>`).join('');
+}
+function renderHistory() {
+  const rs = state.runs.slice().sort((a, b) => b.start - a.start), el = $('#history');
+  if (!rs.length) { el.innerHTML = '<p class="muted" style="margin:0">Пробежек пока нет.</p>'; return; }
+  el.innerHTML = rs.slice(0, ui.histLimit).map(r =>
+    `<div class="list-row"><span class="rr-ic" aria-hidden="true">${r.mode === 'laps' ? '🔁' : '📍'}</span><div class="grow"><b>${fmtKm(r.dist)} км</b> · ${fmtDur(r.ms)} · ${fmtPace(r.ms, r.dist)} /км<div class="small muted">${fmtDateTime(r.start)} · ${r.mode === 'laps' ? `зал, ${r.laps || 0} кр.` : 'улица'}</div></div><button type="button" class="icon-btn" data-delrun="${esc(r.id)}" aria-label="Удалить пробежку ${fmtDateTime(r.start)}">🗑</button></div>`).join('')
+    + (rs.length > ui.histLimit ? '<button type="button" class="btn ghost block" id="histMore" style="margin-top:8px">Показать ещё</button>' : '');
+}
+
+/* ---------- настройки и копия данных ---------- */
+function openSettings() {
+  const s = state.settings;
+  openModal({
+    title: '⚙️ Настройки',
+    body: `<div class="set-row"><label for="sKm">Цель бега на неделю, км</label><input id="sKm" type="number" inputmode="decimal" min="1" max="200" step="1" value="${s.weeklyKm}"></div>
+      <div class="set-row"><label for="sTr">Тренировок в зале в неделю</label><input id="sTr" type="number" inputmode="numeric" min="1" max="14" value="${s.weeklyTrainings}"></div>
+      <div class="set-row"><label for="sLap">Длина круга в зале, м</label><input id="sLap" type="number" inputmode="numeric" min="10" max="2000" step="5" value="${s.lapLength}"></div>
+      <label class="switch"><span>Голосовые подсказки</span><input id="sVoice" type="checkbox"${s.voice ? ' checked' : ''}></label>
+      <label class="switch"><span>Вибрация</span><input id="sVib" type="checkbox"${s.vibrate ? ' checked' : ''}></label>
+      <h3 style="margin-top:20px">Данные</h3>
+      <p class="small muted">Всё хранится только на этом телефоне. Раз в пару недель сохраняй копию — так ничего не потеряется.</p>
+      <div class="stack">
+        <button type="button" class="btn block" id="sExport">📤 Сохранить копию</button>
+        <button type="button" class="btn block" id="sImport">📥 Загрузить копию</button>
+        <button type="button" class="btn ghost danger block" id="sReset">Стереть все данные</button>
+      </div>
+      <input type="file" id="sFile" accept="application/json,.json" hidden>
+      <p class="small muted center" style="margin:16px 0 0">Бокс-трекер · версия 1.0</p>`,
+    actions: [{label: 'Готово', cls: 'primary', onClick: () => { applySettings(); closeModal(); }}],
+    onDismiss: applySettings,
+    onOpen: body => {
+      $('#sExport', body).onclick = () => { applySettings(); exportData(); };
+      $('#sImport', body).onclick = () => $('#sFile', body).click();
+      $('#sFile', body).onchange = e => { const f = e.target.files[0]; if (f) { applySettings(); importData(f); } };
+      $('#sReset', body).onclick = () => {
+        applySettings();
+        confirmBox('Стереть все пробежки, привычки и вес?', 'Стереть всё', () => {
+          try { localStorage.removeItem(KEY); } catch (e) {}
+          state = normalize(null); save(); renderAll(); toast('Все данные стёрты');
+        }, openSettings);
+      };
+    }
+  });
+}
+function applySettings() {
+  const num = (sel, min, max, def) => { const el = $(sel); if (!el) return def; const v = parseFloat(String(el.value).replace(',', '.')); return isFinite(v) ? clamp(v, min, max) : def; };
+  const s = state.settings;
+  s.weeklyKm = Math.round(num('#sKm', 1, 200, s.weeklyKm) * 10) / 10;
+  s.weeklyTrainings = Math.round(num('#sTr', 1, 14, s.weeklyTrainings));
+  s.lapLength = Math.round(num('#sLap', 10, 2000, s.lapLength));
+  const v = $('#sVoice'), b = $('#sVib');
+  if (v) s.voice = v.checked;
+  if (b) s.vibrate = b.checked;
+  save(); renderAll();
+}
+async function shareText(text) {
+  try { if (navigator.share) { await navigator.share({text}); return; } } catch (e) { if (e && e.name === 'AbortError') return; }
+  try { await navigator.clipboard.writeText(text); toast('Скопировано — вставь в чат'); } catch (e) { toast('Не получилось поделиться'); }
+}
+async function exportData() {
+  const name = `boks-tracker-${todayKey()}.json`, json = JSON.stringify(state);
+  try {
+    const file = new File([json], name, {type: 'application/json'});
+    if (/android|iphone|ipad/i.test(navigator.userAgent) && navigator.canShare && navigator.canShare({files: [file]})) {
+      await navigator.share({files: [file], title: 'Бокс-трекер — копия данных'}); return;
+    }
+  } catch (e) { if (e && e.name === 'AbortError') return; }
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], {type: 'application/json'}));
+  a.download = name; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  toast('Файл с копией сохранён');
+}
+function importData(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    let d; try { d = JSON.parse(r.result); } catch (e) { toast('Это не файл копии'); return; }
+    if (!d || d.version !== 1 || !Array.isArray(d.runs)) { toast('Этот файл не подходит'); return; }
+    confirmBox('Заменить текущие данные копией из файла?', 'Заменить', () => { state = normalize(d); save(); renderAll(); toast('Данные загружены ✅'); }, openSettings);
+  };
+  r.readAsText(file);
+}
+
+/* ---------- окна и уведомления ---------- */
+let modalDismiss = null, toastTimer = null;
+function openModal({title, body = '', actions = [], dismissible = true, onDismiss = null, onOpen = null}) {
+  $('#modalTitle').textContent = title;
+  const mb = $('#modalBody'); mb.onclick = null; mb.innerHTML = body;
+  const act = $('#modalActions'); act.innerHTML = '';
+  actions.forEach(a => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn block ' + (a.cls || ''); b.textContent = a.label; b.addEventListener('click', a.onClick); act.appendChild(b); });
+  modalDismiss = dismissible ? (onDismiss || (() => {})) : null;
+  $('#modal').hidden = false; document.body.classList.add('modal-open');
+  $('.sheet').scrollTop = 0;
+  if (onOpen) onOpen(mb);
+}
+function closeModal() { $('#modal').hidden = true; document.body.classList.remove('modal-open'); modalDismiss = null; }
+function dismissModal() { if (!modalDismiss) return; const f = modalDismiss; closeModal(); f(); }
+function confirmBox(text, okLabel, onOk, onCancel) {
+  openModal({title: text, dismissible: true, onDismiss: onCancel || null, actions: [
+    {label: okLabel, cls: 'primary', onClick: () => { closeModal(); onOk(); }},
+    {label: 'Отмена', onClick: () => { closeModal(); if (onCancel) onCancel(); }}
+  ]});
+}
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ---------- установка на главный экран ---------- */
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; renderInstall(); });
+window.addEventListener('appinstalled', () => { deferredPrompt = null; renderInstall(); });
+const isStandalone = () => (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+function renderInstall() {
+  const card = $('#installCard');
+  let hidden = false; try { hidden = localStorage.getItem(HIDE_INSTALL) === '1'; } catch (e) {}
+  if (isStandalone() || hidden) { card.hidden = true; return; }
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  $('#installHow').textContent = deferredPrompt ? 'Нажми «Установить» — появится иконка, как у обычного приложения.'
+    : ios ? 'В Safari нажми «Поделиться» ⬆️, потом «На экран „Домой“».'
+    : 'В Chrome нажми ⋮ вверху, потом «Добавить на главный экран».';
+  $('#btnInstall').hidden = !deferredPrompt;
+  card.hidden = false;
+}
+
+/* ---------- вкладки и запуск ---------- */
+const TABS = ['run', 'rounds', 'habits', 'stats'];
+function showTab(t) {
+  if (!TABS.includes(t)) t = 'run';
+  ui.tab = t;
+  TABS.forEach(x => { $('#tab-' + x).hidden = x !== t; });
+  $$('.nav button').forEach(b => { if (b.dataset.tab === t) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  if (t === 'run') renderRun(); else if (t === 'rounds') renderRounds(); else if (t === 'habits') renderHabits(); else renderStats();
+  try { history.replaceState(null, '', '#' + t); } catch (e) {}
+  window.scrollTo(0, 0);
+}
+function renderAll() { renderRun(); renderRounds(); renderHabits(); renderStats(); }
+
+function bind() {
+  $$('.nav button').forEach(b => b.addEventListener('click', () => showTab(b.dataset.tab)));
+  $('#btnSettings').addEventListener('click', openSettings);
+  $('#modeSeg').addEventListener('click', e => {
+    const b = e.target.closest('[data-mode]'); if (!b || run.status !== 'idle') return;
+    run.mode = state.settings.mode = b.dataset.mode; save();
+    if (run.mode === 'laps') { stopGps(); gps.err = null; }
+    renderRun();
+  });
+  $('#goalChips').addEventListener('click', e => {
+    const b = e.target.closest('[data-goal]'); if (!b || run.status !== 'idle') return;
+    run.goal = state.settings.goal = b.dataset.goal; save(); renderRun();
+  });
+  $('#lapLen').addEventListener('change', e => {
+    const v = parseInt(e.target.value, 10);
+    state.settings.lapLength = isFinite(v) ? clamp(v, 10, 2000) : 400; save();
+    e.target.blur(); renderRun();
+  });
+  $('#gpsChip').addEventListener('click', () => { if (run.mode !== 'gps') return; stopGps(); gps.err = null; startGps(); });
+  $('#btnStart').addEventListener('click', startRun);
+  $('#btnPause').addEventListener('click', () => pauseRun());
+  $('#btnResume').addEventListener('click', resumeRun);
+  $('#btnFinish').addEventListener('click', finishRun);
+  $('#btnLap').addEventListener('click', addLap);
+  $('#btnUndoLap').addEventListener('click', undoLap);
+  $('#btnInstall').addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    try { await deferredPrompt.userChoice; } catch (e) {}
+    deferredPrompt = null; renderInstall();
+  });
+  $('#btnInstallHide').addEventListener('click', () => { try { localStorage.setItem(HIDE_INSTALL, '1'); } catch (e) {} renderInstall(); });
+
+  $('#rStart').addEventListener('click', rStartPause);
+  $('#rReset').addEventListener('click', rReset);
+  $('#rSetup').addEventListener('click', e => {
+    if (rt.phase !== 'idle' && rt.phase !== 'done') return;
+    const p = e.target.closest('[data-p]'), st = e.target.closest('[data-step]'), r = state.settings.rounds;
+    if (p) { const [n, w, s] = p.dataset.p.split(',').map(Number); Object.assign(r, {n, work: w, rest: s}); }
+    else if (st) { const [k, d] = st.dataset.step.split(','); const lim = {n: [1, 20], work: [30, 600], rest: [0, 300]}[k]; r[k] = clamp(r[k] + Number(d), lim[0], lim[1]); }
+    else return;
+    save();
+    if (rt.phase === 'done') rReset(); else renderRounds();
+  });
+  $('#rMarks').addEventListener('click', e => { const b = e.target.closest('[data-mark]'); if (!b) return; toggleCheck(b.dataset.mark, todayKey()); renderRoundMarks(); });
+
+  $('#wkPrev').addEventListener('click', () => { ui.weekOffset--; renderHabits(); });
+  $('#wkNext').addEventListener('click', () => { if (ui.weekOffset < 0) { ui.weekOffset++; renderHabits(); } });
+  $('#habitList').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.toggle) { toggleCheck(b.dataset.toggle, todayKey()); renderHabits(`[data-toggle="${CSS.escape(b.dataset.toggle)}"]`); }
+    else if (b.dataset.day) { toggleCheck(b.dataset.id, b.dataset.day); renderHabits(`[data-id="${CSS.escape(b.dataset.id)}"][data-day="${b.dataset.day}"]`); }
+  });
+  $('#btnEditHabits').addEventListener('click', openHabitEditor);
+
+  $('#periodSeg').addEventListener('click', e => { const b = e.target.closest('[data-period]'); if (!b) return; ui.period = b.dataset.period; renderStats(); });
+  $('#weightForm').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = parseFloat($('#weightIn').value.replace(',', '.'));
+    if (!(v >= 20 && v <= 250)) { toast('Введи вес в килограммах, например 62,5'); return; }
+    addWeight(Math.round(v * 10) / 10); $('#weightIn').value = ''; $('#weightIn').blur();
+    renderWeight(); toast('Вес записан ✅');
+  });
+  $('#weightInfo').addEventListener('click', e => {
+    const b = e.target.closest('[data-delweight]'); if (!b) return;
+    state.weights = state.weights.filter(w => w.date !== b.dataset.delweight); save(); renderWeight();
+  });
+  $('#history').addEventListener('click', e => {
+    if (e.target.closest('#histMore')) { ui.histLimit += 20; renderHistory(); return; }
+    const b = e.target.closest('[data-delrun]'); if (!b) return;
+    const r = state.runs.find(x => x.id === b.dataset.delrun); if (!r) return;
+    confirmBox(`Удалить пробежку ${fmtKm(r.dist)} км (${fmtDateTime(r.start)})?`, 'Удалить', () => {
+      state.runs = state.runs.filter(x => x.id !== r.id); save(); renderStats(); toast('Пробежка удалена');
+    });
+  });
+
+  $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') dismissModal(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#modal').hidden) dismissModal(); });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      if (needWake()) requestWake();
+      renderGps(); if (ui.tab === 'habits') renderHabits(); if (ui.tab === 'stats') renderStats();
+    } else persistActive(true);
+  });
+  window.addEventListener('pagehide', () => persistActive(true));
+  window.addEventListener('hashchange', () => { const h = location.hash.slice(1); if (TABS.includes(h) && h !== ui.tab) showTab(h); });
+}
+
+let tickN = 0, lastDay = todayKey();
+function tick() {
+  tickN++;
+  if (run.status === 'running') { renderRunLive(); checkGoal(); if (tickN % 4 === 0) persistActive(); }
+  if (gps.watch !== null && tickN % 4 === 0) renderGps();
+  rTick();
+  if (tickN % 40 === 0) {
+    const d = todayKey();
+    if (d !== lastDay) { lastDay = d; if (ui.tab === 'habits') renderHabits(); if (ui.tab === 'stats') renderStats(); }
+  }
+}
+
+function init() {
+  bind();
+  restoreActive();
+  showTab(location.hash.slice(1));
+  renderInstall();
+  setInterval(tick, 250);
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  }
+  if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+}
+window.BT = {feedPoint, run, gps, get state() { return state; }, resetFilter() { smooth = []; recent = []; hist = []; }, MAX_ACC, MIN_STEP, MAX_SPEED};
+init();
+})();
+</script>
+</body>
+</html>
